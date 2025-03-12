@@ -1,0 +1,22 @@
+{
+  "name": "reverse-proxy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsc -b && node dist/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^4.21.2",
+    "http-proxy": "^1.18.1",
+    "typescript": "^5.8.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/http-proxy": "^1.17.16"
+  }
+}
