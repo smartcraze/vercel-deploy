@@ -12,16 +12,15 @@ const proxy = httpProxy.createProxy();
 app.use((req, res) => {
   const hostname = req.hostname;
   const subdomain = hostname.split(".")[0];
-
-  /*
-   *i will enhance more will add database to store subdomain and     their   respective path
-   *and will use that path to resolve the request
-   *for now i am using static path
-   */
   const resolvesTo = `${BASE_PATH}/${subdomain}`;
-
   return proxy.web(req, res, { target: resolvesTo, changeOrigin: true });
 });
+
+/*
+ *i will enhance more will add database to store subdomain and     their   respective path
+ *and will use that path to resolve the request
+ *for now i am using static path
+ */
 
 proxy.on("proxyReq", (proxyReq, req, res) => {
   const url = req.url;
