@@ -12,6 +12,7 @@
     "@aws-sdk/client-ecs": "^3.766.0",
     "@types/http-proxy": "^1.17.16",
     "http-proxy": "^1.18.1",
+    "lucide-react": "^0.483.0",
     "next": "15.2.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
