@@ -5,6 +5,7 @@ import { promisify } from "util";
 // @ts-ignore
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import mime from "mime-types";
+import Redis from "ioredis";
 
 const execAsync = promisify(exec);
 
@@ -21,10 +22,16 @@ const BUCKET_NAME = process.env.R2_BUCKET_NAME!;
 const PROJECT_ID = process.env.PROJECT_ID;
 
 if (!BUCKET_NAME || !PROJECT_ID) {
-  console.error(
-    "ERROR: BUCKET_NAME or PROJECT_ID is missing in environment variables."
-  );
+  console.error("ERROR: BUCKET_NAME or PROJECT_ID is missing in environment variables.");
   process.exit(1);
+}
+
+// Redis setup
+const publisher = new Redis(process.env.REDIS_URL!);
+
+function publishLog(log: string) {
+  console.log(log); 
+  publisher.publish(`logs:${PROJECT_ID}`, JSON.stringify({ log }));
 }
 
 /**
@@ -53,38 +60,42 @@ function getAllFiles(directoryPath: string): string[] {
  */
 async function buildProject() {
   try {
-    console.log("Starting the build process...");
+    publishLog("🚀 Starting the build process...");
 
     const outputDirectory = path.join(__dirname, "output");
 
     if (!fs.existsSync(outputDirectory)) {
-      console.error(
-        "ERROR: Output directory not found. The cloning process might have failed."
-      );
+      const error = "❌ ERROR: Output directory not found. The cloning process might have failed.";
+      console.error(error);
+      publishLog(error);
       process.exit(1);
     }
 
-    console.log("Running npm install and build...");
+    publishLog("📦 Running npm install and build...");
 
     await execAsync(`cd ${outputDirectory} && npm install && npm run build`);
 
-    console.log("Build process completed successfully.");
+    publishLog("✅ Build process completed successfully.");
 
     const buildOutputDirectory = path.join(outputDirectory, "dist");
 
     if (!fs.existsSync(buildOutputDirectory)) {
-      console.error("ERROR: Build output directory (dist) not found.");
+      const error = "ERROR: Build output directory (dist) not found.";
+      console.error(error);
+      publishLog(error);
       process.exit(1);
     }
 
     const filesToUpload = getAllFiles(buildOutputDirectory);
-    console.log(`Found ${filesToUpload.length} files to upload.`);
+    publishLog(`📁 Found ${filesToUpload.length} files to upload.`);
 
     await uploadFilesToS3(filesToUpload, buildOutputDirectory);
 
-    console.log("Deployment process completed successfully.");
-  } catch (error) {
-    console.error("ERROR: Build process failed.", error);
+    publishLog("✅ Deployment process completed successfully.");
+  } catch (error: any) {
+    const msg = ` ERROR: Build process failed. ${error.message}`;
+    console.error(msg, error);
+    publishLog(msg);
     process.exit(1);
   }
 }
@@ -98,9 +109,7 @@ async function uploadFilesToS3(files: string[], baseDirectory: string) {
       const relativeFilePath = path.relative(baseDirectory, filePath);
       const mimeType = mime.lookup(filePath) || "application/octet-stream";
 
-      console.log(
-        `Uploading file: ${relativeFilePath} (MIME Type: ${mimeType})`
-      );
+      publishLog(`📤 Uploading file: ${relativeFilePath} (MIME Type: ${mimeType})`);
 
       const uploadCommand = new PutObjectCommand({
         Bucket: BUCKET_NAME,
@@ -111,10 +120,11 @@ async function uploadFilesToS3(files: string[], baseDirectory: string) {
 
       try {
         await s3Client.send(uploadCommand);
-        console.log(`Upload successful: ${relativeFilePath}`);
+        publishLog(`✅ Upload successful: ${relativeFilePath}`);
       } catch (error: any) {
-        console.error(`ERROR: Failed to upload ${relativeFilePath}.`, error);
-        console.log("ERROR: Failed to upload", error.message);
+        const msg = `❌ ERROR: Failed to upload ${relativeFilePath}. ${error.message}`;
+        console.error(msg);
+        publishLog(msg);
         process.exit(1);
       }
     })
