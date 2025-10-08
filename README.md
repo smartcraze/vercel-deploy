@@ -3,6 +3,10 @@
 
 This project is a simplified **Vercel clone** designed to automatically build and host **React applications**. Each React app is deployed using a unique `projectId` and is served locally at `http://<projectId>.localhost:8000`.
 
+
+<img width="5887" height="1522" alt="image" src="https://github.com/user-attachments/assets/b98fa95e-9ea9-4e21-aa85-f084bf19bb55" />
+
+
 Basically it build the file of react and the dist or the build folder of the application is uploaded to the R2 similar to S3 object storage and with the help of the reverse proxies native support of node js we proxies the request of the subdomain.domain to the actual url of the R2 
 i will very soon add the frontend of this vercel very soon
 
